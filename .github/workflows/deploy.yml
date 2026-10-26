@@ -1,0 +1,68 @@
+
+name: ESign Free Install Website
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "ESign.ipa"
+      - ".github/workflows/deploy.yml"
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Prepare website
+        run: |
+          test -f ESign.ipa || {
+            echo "ESign.ipa missing from repository root"
+            exit 1
+          }
+
+          mkdir -p public
+          cp ESign.ipa public/ESign.ipa
+
+          cat > public/index.html <<'HTML'
+          <!doctype html>
+          <html lang="en">
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <title>ESign Installer</title>
+          </head>
+          <body style="font-family:system-ui;text-align:center;padding:50px 15px">
+            <h1>ESign</h1>
+            <p>Install ESign on your iPhone</p>
+            <a href="ESign.ipa"
+               style="display:inline-block;padding:14px 24px;background:#16a34a;color:white;text-decoration:none;border-radius:12px">
+              Download ESign IPA
+            </a>
+          </body>
+          </html>
+          HTML
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v4
